@@ -8,6 +8,8 @@ export interface OrderLine {
   quantity:    number
   unitPrice:   number
   totalPrice?: number
+  ean1?:       string | null
+  ean2?:       string | null
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -25,12 +27,14 @@ const parseTool = {
           items: {
             type: "object",
             properties: {
-              position:    { type: "string" },
-              articleRaw:  { type: "string" },
+              position:    { type: "string", description: "Fortlaufende Nummerierung ab 1" },
+              articleRaw:  { type: "string", description: "Artikelnummer oder vermutete Artikelkennung, keine EAN" },
               description: { type: "string" },
               quantity:    { type: "number" },
               unitPrice:   { type: "number" },
-              totalPrice:  { type: "number" }
+              totalPrice:  { type: "number" },
+              ean1:        { type: "string", nullable: true, description: "Erste EAN, falls vorhanden" },
+              ean2:        { type: "string", nullable: true, description: "Zweite EAN, falls vorhanden" }
             },
             required: ["position", "articleRaw", "description", "quantity", "unitPrice"],
             additionalProperties: false
@@ -49,7 +53,11 @@ export async function parseFullDocument(text: string): Promise<OrderLine[]> {
     messages: [
       {
         role: "system",
-        content: "Extrahiere alle Bestellpositionen aus dem folgenden OCR-Text."
+        content: `Extrahiere alle Bestellpositionen aus dem folgenden OCR-Text. 
+Jede Position soll eine fortlaufende Nummer (beginnend bei 1) enthalten. 
+Falls eine oder mehrere EANs enthalten sind, gib sie unter "ean1" und "ean2" an. 
+Falls keine EANs erkannt werden, lasse die Felder leer oder setze sie auf null. 
+Das Feld "articleRaw" soll nur eine Artikelnummer oder vermutete Artikelkennung enthalten, keine EAN.`
       },
       {
         role: "user",
