@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { extractTextFromPdf } from "@/lib/extractTextFromPdf"
-import type { OrderLine } from "@/lib/parseWithLLM"
+import type { OrderLine } from "@/lib/extractOrderLines"
 import type { MappedLine } from "@/lib/mapWithLLM"
 
 export default function HomePage() {
   const [file, setFile]       = useState<File|null>(null)
   const [lines, setLines]     = useState<OrderLine[]>([])
+  const [metadata, setMetadata] = useState<any>(null)
   const [mapped, setMapped]   = useState<MappedLine[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -17,14 +18,20 @@ export default function HomePage() {
     try {
       const rawText = await extractTextFromPdf(file)
 
-      const { lines: parsed } = await fetch("/api/parseLines", {
+      const response = await fetch("/api/parseLines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rawText })
-      }).then(r => r.json())
+      })
 
-      setLines(parsed)
-      console.log("Extrahierte OrderLines:", parsed)
+      const { positions, metadata } = await response.json()
+
+
+      setLines(positions)
+      setMetadata(metadata)
+
+      console.log("Extrahierte OrderLines:", positions)
+      console.log("Extrahierte Metadaten:", metadata)
 
       //const { mapped: mappedRes } = await fetch("/api/mapLines", {
         //method: "POST",

@@ -1,15 +1,14 @@
-// app/api/parseLines/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { parseFullDocument } from "@/lib/parseWithLLM"
+import { parseOrderDocument } from "@/lib/parseOrderDocument"
 
 export async function POST(req: NextRequest) {
   const { rawText } = await req.json()
 
   try {
-    const lines = await parseFullDocument(rawText)
-    return NextResponse.json({ lines })
+    const result = await parseOrderDocument(rawText)
+    return NextResponse.json(result) // ← gibt { metadata, positions } zurück
   } catch (err) {
-    console.error("parseLines error", err)
+    console.error("parseOrderDocument error", err)
     return NextResponse.json({ error: "Parsing failed" }, { status: 500 })
   }
 }

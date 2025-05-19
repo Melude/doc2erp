@@ -54,10 +54,10 @@ export async function parseFullDocument(text: string): Promise<OrderLine[]> {
       {
         role: "system",
         content: `Extrahiere alle Bestellpositionen aus dem folgenden OCR-Text. 
-Jede Position soll eine fortlaufende Nummer (beginnend bei 1) enthalten. 
-Falls eine oder mehrere EANs enthalten sind, gib sie unter "ean1" und "ean2" an. 
-Falls keine EANs erkannt werden, lasse die Felder leer oder setze sie auf null. 
-Das Feld "articleRaw" soll nur eine Artikelnummer oder vermutete Artikelkennung enthalten, keine EAN.`
+                  Jede Position soll eine fortlaufende Nummer (beginnend bei 1) enthalten. 
+                  Falls eine oder mehrere EANs enthalten sind, gib sie unter "ean1" und "ean2" an. 
+                  Falls keine EANs erkannt werden, lasse die Felder leer oder setze sie auf null. 
+                  Das Feld "articleRaw" soll nur eine Artikelnummer oder vermutete Artikelkennung enthalten, keine EAN.`
       },
       {
         role: "user",
