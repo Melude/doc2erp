@@ -29,11 +29,11 @@ const metadataTool = {
         customerName:    { type: "string", description: "Name der Kundenfirma" },
         customerName2:   { type: "string", description: "Zweiter Namenszusatz, z. B. Abteilung (optional)" },
         customerStreet:  { type: "string", description: "Straße und Hausnummer der Kundenadresse" },
-        customerCity:    { type: "string", description: "PLZ und Ort der Kundenadresse" },
+        customerCity:    { type: "string", description: "PLZ und Ort der Kundenadresse, können auch ausländische Formate der PLZ sein" },
         deliveryName:    { type: "string", description: "Name der Lieferadresse (Firma oder Empfänger), falls abweichend" },
         deliveryName2:   { type: "string", description: "Zweiter Namenszusatz der Lieferadresse (optional)" },
         deliveryStreet:  { type: "string", description: "Straße und Hausnummer der Lieferadresse" },
-        deliveryCity:    { type: "string", description: "PLZ und Ort der Lieferadresse" },
+        deliveryCity:    { type: "string", description: "PLZ und Ort der Lieferadresse, können auch ausländische Formate der PLZ sein" },
         orderDate:       { type: "string", description: "Datum der Bestellung im Format YYYY-MM-DD" },
         deliveryDate:    { type: "string", description: "Lieferdatum im Format YYYY-MM-DD" }
       },
@@ -51,36 +51,34 @@ export async function parseOrderMetadata(text: string): Promise<OrderMetadata> {
         role: "system",
         content: `Extrahiere, falls möglich, die folgenden Metadaten aus dem OCR-Text:
 
-- Bestellnummer (z.B. Auftragsnummer, Referenznummer)
+                  - Bestellnummer (z.B. Auftragsnummer, Referenznummer, Encomenda, Numéro de commande)
 
-- Kundenadresse:
-  - customerName (z.B. Firmenname)
-  - customerName2 (z.B. Abteilung oder Zusatz, optional)
-  - customerStreet (mit Hausnummer)
-  - customerCity (bestehend aus PLZ und Ort)
+                  - Kundenadresse:
+                    - customerName (z.B. Firmenname)
+                    - customerName2 (z.B. Abteilung oder Zusatz, optional)
+                    - customerStreet (mit Hausnummer)
+                    - customerCity (bestehend aus PLZ und Ort)
 
-- Lieferadresse (falls explizit angegeben):
-  - deliveryName
-  - deliveryName2 (optional)
-  - deliveryStreet
-  - deliveryCity
+                  - Lieferadresse (nur wenn explizit angegeben):
+                    - deliveryName
+                    - deliveryName2 (optional)
+                    - deliveryStreet
+                    - deliveryCity
 
-- Bestelldatum (im Format YYYY-MM-DD)
-- Lieferdatum (im Format YYYY-MM-DD)
+                  - Bestelldatum (im Format YYYY-MM-DD)
+                  - Lieferdatum (im Format YYYY-MM-DD)
 
-Wichtig:
-Eine Lieferadresse soll **nur dann ausgefüllt werden**, wenn im Dokument klar erkennbar ist, dass es sich um eine Lieferadresse handelt (z.B. durch Begriffe wie "Lieferadresse", "Local de Entrega", "Lieferung an", "Versand an", o.ä.).
+                  WICHTIG:
+                  1. **Nur** dann Lieferadresse ausfüllen, wenn im Dokument klar als solche gekennzeichnet.
+                  2. **Blacklist**: Die folgende Adresse darf **unter keinen Umständen** extrahiert werden – selbst bei Schreibvarianten, Teiladressen oder minimalen Tippfehlern. 
+                
+                  Schnitzer GmbH & Co. KG
+                  Marlener Str. 9
+                  77656 Offenburg
 
-Falls keine eindeutige Kennzeichnung vorhanden ist, lasse die Felder zur Lieferadresse bitte vollständig leer – auch wenn eine Adresse unterhalb des Kunden steht.
+                  3. Felder zur Lieferadresse **leer lassen**, wenn keine eindeutige Kennzeichnung vorliegt.
 
-Die folgende Kundenadresse darf **niemals** als Kunden- oder Lieferadresse extrahiert werden – selbst wenn sie im Dokument erscheint:
-
-- customerName: Schnitzer GmbH & Co. KG
-- customerStreet: Marlener Str. 9
-- customerCity: 77656 Offenburg
-
-Dies gilt auch bei Schreibvariationen wie „Schnitzer Gmbh“, „Marlener Straße“, „77656 Offnburg“ usw. Bitte ignoriere die komplette Adresse, wenn sie nur ähnlich aussieht oder unvollständig ist.`
-
+                  Wenn im OCR-Text keine oder nur unvollständige Einträge gefunden werden oder die Adresse auf der Blacklist landet, gib einfach ein leeres JSON-Objekt zurück.`
       },
       {
         role: "user",
