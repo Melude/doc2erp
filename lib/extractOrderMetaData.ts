@@ -4,9 +4,15 @@ import type { ChatCompletionMessageToolCall } from "openai/resources/chat/comple
 export interface OrderMetadata {
   orderNumber?:     string
   customerName?:    string
-  deliveryAddress?: string
-  orderDate?:       string  // ISO-Format empfohlen
-  deliveryDate?:    string  // ISO-Format empfohlen
+  customerName2?:   string
+  customerStreet?:  string
+  customerCity?:    string
+  deliveryName?:    string
+  deliveryName2?:   string
+  deliveryStreet?:  string
+  deliveryCity?:    string
+  orderDate?:       string
+  deliveryDate?:    string
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -20,10 +26,16 @@ const metadataTool = {
       type: "object",
       properties: {
         orderNumber:     { type: "string", description: "Bestellnummer oder Referenznummer, falls vorhanden" },
-        customerName:    { type: "string", description: "Name des Kunden oder Bestellers" },
-        deliveryAddress: { type: "string", description: "Lieferadresse, falls eindeutig im Dokument erkennbar" },
-        orderDate:       { type: "string", description: "Datum der Bestellung im Format YYYY-MM-DD, falls erkennbar" },
-        deliveryDate:    { type: "string", description: "Geplantes oder tatsächliches Lieferdatum im Format YYYY-MM-DD, falls erkennbar" }
+        customerName:    { type: "string", description: "Name der Kundenfirma" },
+        customerName2:   { type: "string", description: "Zweiter Namenszusatz, z. B. Abteilung (optional)" },
+        customerStreet:  { type: "string", description: "Straße und Hausnummer der Kundenadresse" },
+        customerCity:    { type: "string", description: "PLZ und Ort der Kundenadresse" },
+        deliveryName:    { type: "string", description: "Name der Lieferadresse (Firma oder Empfänger), falls abweichend" },
+        deliveryName2:   { type: "string", description: "Zweiter Namenszusatz der Lieferadresse (optional)" },
+        deliveryStreet:  { type: "string", description: "Straße und Hausnummer der Lieferadresse" },
+        deliveryCity:    { type: "string", description: "PLZ und Ort der Lieferadresse" },
+        orderDate:       { type: "string", description: "Datum der Bestellung im Format YYYY-MM-DD" },
+        deliveryDate:    { type: "string", description: "Lieferdatum im Format YYYY-MM-DD" }
       },
       required: [],
       additionalProperties: false
@@ -39,21 +51,35 @@ export async function parseOrderMetadata(text: string): Promise<OrderMetadata> {
         role: "system",
         content: `Extrahiere, falls möglich, die folgenden Metadaten aus dem OCR-Text:
 
-                  - Bestellnummer (z.B. Auftragsnummer, Referenznummer)
-                  - Name des Kunden oder Bestellers
-                  - Lieferadresse (z.B. bei "Lieferadresse" oder "Local de Entrega" aufgeführt)
-                  - Bestelldatum (im Format YYYY-MM-DD)
-                  - Lieferdatum (im Format YYYY-MM-DD)
+- Bestellnummer (z.B. Auftragsnummer, Referenznummer)
 
-                  Hinweis: Die folgende Adresse ist die Standardanschrift unseres Kunden und darf **nicht** als Kunden- oder Lieferadresse extrahiert werden:
+- Kundenadresse:
+  - customerName (z.B. Firmenname)
+  - customerName2 (z.B. Abteilung oder Zusatz, optional)
+  - customerStreet (mit Hausnummer)
+  - customerCity (bestehend aus PLZ und Ort)
 
-                  Schnitzer GmbH & Co. KG  
-                  Marlener Str. 9  
-                  77656 Offenburg
+- Lieferadresse (falls explizit angegeben):
+  - deliveryName
+  - deliveryName2 (optional)
+  - deliveryStreet
+  - deliveryCity
 
-                  Falls dieselbe Adresse im Dokument erscheint, ignoriere sie bitte vollständig.
+- Bestelldatum (im Format YYYY-MM-DD)
+- Lieferdatum (im Format YYYY-MM-DD)
 
-                  Bevorzuge bei der Lieferadresse explizite Angaben wie "Lieferadresse", "Local de Entrega" oder ähnliche Formulierungen. Gib nur Werte zurück, wenn sie eindeutig im Text enthalten sind.`
+Wichtig:
+Eine Lieferadresse soll **nur dann ausgefüllt werden**, wenn im Dokument klar erkennbar ist, dass es sich um eine Lieferadresse handelt (z.B. durch Begriffe wie "Lieferadresse", "Local de Entrega", "Lieferung an", "Versand an", o.ä.).
+
+Falls keine eindeutige Kennzeichnung vorhanden ist, lasse die Felder zur Lieferadresse bitte vollständig leer – auch wenn eine Adresse unterhalb des Kunden steht.
+
+Die folgende Kundenadresse darf **niemals** als Kunden- oder Lieferadresse extrahiert werden – selbst wenn sie im Dokument erscheint:
+
+- customerName: Schnitzer GmbH & Co. KG
+- customerStreet: Marlener Str. 9
+- customerCity: 77656 Offenburg
+
+Dies gilt auch bei Schreibvariationen wie „Schnitzer Gmbh“, „Marlener Straße“, „77656 Offnburg“ usw. Bitte ignoriere die komplette Adresse, wenn sie nur ähnlich aussieht oder unvollständig ist.`
 
       },
       {
