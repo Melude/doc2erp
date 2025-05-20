@@ -1,42 +1,60 @@
-export const buildPayloadTool = {
-  type: "function",
-  function: {
-    name: "buildErpPayload",
-    description: "Erzeugt aus extrahierten Metadaten, Artikel-Mapping und Kundeninfo das finale ERP-Datenobjekt.",
-    parameters: {
-      type: "object",
-      properties: {
-        customerName:     { type: "string" },
-        customerStreet:   { type: "string" },
-        customerCity:     { type: "string" },
-        orderNumber:      { type: "string" },
-        orderDate:        { type: "string" },
-        deliveryDate:     { type: "string" },
-        deliveryAddress: {
-          type: "object",
-          properties: {
-            name:   { type: "string" },
-            street: { type: "string" },
-            city:   { type: "string" }
-          },
-          required: ["name", "street", "city"]
-        },
-        positions: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              position:     { type: "string" },
-              articleId:    { type: "string" },
-              quantity:     { type: "number" },
-              unitPrice:    { type: "number" },
-              description:  { type: "string" }
-            },
-            required: ["position", "articleId", "quantity", "unitPrice"]
-          }
-        }
-      },
-      required: ["customerName", "customerStreet", "customerCity", "orderNumber", "orderDate", "positions", "deliveryAddress"]
-    }
+import type { OrderMetadata } from "@/lib/extract/extractOrderMetaData"
+import type { MappedLine } from "../validate/validateArticle"
+import type { OrderLine } from "@/lib/extract/extractOrderLines"
+import type { ValidatedCustomer } from "@/lib/validate/validateCustomer"
+
+interface ErpPosition {
+  position: string
+  articleNumber: string
+  description: string
+  quantity: number
+  unitPrice: number
+}
+
+interface ErpAddress {
+  name: string
+  street: string
+  city: string
+}
+
+export interface ErpPayload {
+  customerNumber: number
+  externalOrderNumber: string
+  orderDate: string
+  deliveryDate: string
+  deliveryAddress: ErpAddress
+  positions: ErpPosition[]
+}
+
+export function buildErpPayload(
+  metadata: OrderMetadata,
+  validatedCustomer: ValidatedCustomer,
+  lines: OrderLine[],
+  mapped: MappedLine[]
+): ErpPayload {
+  const delivery = validatedCustomer.deliveryAddress ?? {
+    name1: metadata.deliveryName || validatedCustomer.name1,
+    name2: metadata.deliveryName2 || validatedCustomer.name2,
+    street: metadata.deliveryStreet || validatedCustomer.street,
+    city: metadata.deliveryCity || validatedCustomer.city
   }
-} as const
+
+  return {
+    customerNumber: validatedCustomer.customerId,
+    externalOrderNumber: metadata.orderNumber ?? "",
+    orderDate: metadata.orderDate ?? "",
+    deliveryDate: metadata.deliveryDate ?? "",
+    deliveryAddress: {
+      name: [delivery.name1, delivery.name2].filter(Boolean).join(" "),
+      street: delivery.street,
+      city: delivery.city
+    },
+    positions: mapped.map((m, i) => ({
+      position: m.position,
+      articleNumber: m.articleId,
+      description: m.articleName,
+      quantity: lines[i]?.quantity ?? 0,
+      unitPrice: lines[i]?.unitPrice ?? 0
+    }))
+  }
+}

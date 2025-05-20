@@ -3,7 +3,11 @@
 import { useState } from "react"
 import { extractTextFromPdf } from "@/lib/extract/extractTextFromPdf"
 import type { OrderLine } from "@/lib/extract/extractOrderLines"
-import type { MappedLine } from "@/lib/validate/mapArticel"
+import type { MappedLine } from "@/lib/validate/validateArticle"
+import { mapAllLines } from "@/lib/validate/validateArticle"
+import { validateCustomer } from "@/lib/validate/validateCustomer"
+import { buildErpPayload } from "@/lib/tools/buildErpPayload"
+import type { ErpPayload } from "@/lib/tools/buildErpPayload"
 
 export default function HomePage() {
   const [file, setFile]       = useState<File|null>(null)
@@ -11,6 +15,7 @@ export default function HomePage() {
   const [metadata, setMetadata] = useState<any>(null)
   const [mapped, setMapped]   = useState<MappedLine[]>([])
   const [loading, setLoading] = useState(false)
+  const [erpPayload, setErpPayload] = useState<ErpPayload | null>(null)
 
   const handleProcess = async () => {
     if (!file) return
@@ -29,17 +34,30 @@ export default function HomePage() {
 
       setLines(positions)
       setMetadata(metadata)
+      const mappedLines = await mapAllLines(positions)
+
+      const customerInfo = await validateCustomer({
+        customerName: metadata.customerName,
+        customerStreet: metadata.customerStreet,
+        customerCity: metadata.customerCity
+      })
+
+      if (!customerInfo) {
+        console.error("Kein passender Kunde gefunden")
+        return
+      }
+
+      const payload = buildErpPayload(metadata, customerInfo, positions, mappedLines)
+
+      console.log("ERP-Payload:", payload)
+      setMapped(mappedLines)
+      setErpPayload(payload)
 
       console.log("Extrahierte OrderLines:", positions)
       console.log("Extrahierte Metadaten:", metadata)
+      console.log("Gemappte Artikel:", mappedLines)
+      console.log("ERP-Payload:", payload)
 
-      //const { mapped: mappedRes } = await fetch("/api/mapLines", {
-        //method: "POST",
-        //headers: { "Content-Type": "application/json" },
-        //body: JSON.stringify({ lines: parsed })
-      //}).then(r => r.json())
-
-      //setMapped(mappedRes)
     } catch (err) {
       console.error(err)
     } finally {

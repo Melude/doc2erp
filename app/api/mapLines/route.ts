@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { mapAllLines } from "@/lib/validate/mapArticel"
+import { mapAllLines } from "@/lib/validate/validateArticle"
 
 export async function POST(req: NextRequest) {
   const { lines } = await req.json()

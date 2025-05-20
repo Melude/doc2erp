@@ -4,7 +4,7 @@ export interface ArticleData {
   ean: string
 }
 
-[
+export const articleData: ArticleData[] = [
   { "id": 4756, "name": "Bio Ciabatta Olive glutenfrei 6 x 180 g", "ean": "4022993447569" },
   { "id": 4718, "name": "Bio Ciabatta Olive glutenfrei 1 x 180 g", "ean": "4022993047189" },
   { "id": 4703, "name": "Bio Focaccia glutenfrei 6 x 220 g", "ean": "4022993447309" },
