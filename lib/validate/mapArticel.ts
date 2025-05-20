@@ -1,6 +1,6 @@
 import OpenAI from "openai"
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions"
-import type { OrderLine } from "./extractOrderLines"
+import type { OrderLine } from "../extract/extractOrderLines"
 
 export interface MappedLine {
   position:        string

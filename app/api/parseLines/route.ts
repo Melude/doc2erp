@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { parseOrderDocument } from "@/lib/parseOrderDocument"
+import { parseOrderDocument } from "@/lib/extract/parseOrderDocument"
 
 export async function POST(req: NextRequest) {
   const { rawText } = await req.json()

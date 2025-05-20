@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { extractTextFromPdf } from "@/lib/extractTextFromPdf"
-import type { OrderLine } from "@/lib/extractOrderLines"
-import type { MappedLine } from "@/lib/mapWithLLM"
+import { extractTextFromPdf } from "@/lib/extract/extractTextFromPdf"
+import type { OrderLine } from "@/lib/extract/extractOrderLines"
+import type { MappedLine } from "@/lib/validate/mapArticel"
 
 export default function HomePage() {
   const [file, setFile]       = useState<File|null>(null)
