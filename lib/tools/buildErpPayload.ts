@@ -50,7 +50,7 @@ export function buildErpPayload(
       city: delivery.city
     },
     positions: mapped.map((m, i) => ({
-      position: m.position,
+      position: String(i + 1),
       articleNumber: m.articleId,
       description: m.articleName,
       quantity: lines[i]?.quantity ?? 0,

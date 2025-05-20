@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { mapAllLines } from "@/lib/validate/validateArticle"
+import type { OrderLine } from "@/lib/extract/extractOrderLines"
 
 export async function POST(req: NextRequest) {
-  const { lines } = await req.json()
   try {
-    const mapped = await mapAllLines(lines)
+    const { lines } = await req.json()
+    const mapped = await mapAllLines(lines as OrderLine[])
     return NextResponse.json({ mapped })
   } catch (err) {
-    console.error("mapLines error", err)
-    return NextResponse.json({ error: "Mapping failed" }, { status: 500 })
+    console.error("Fehler im Mapping:", err)
+    return NextResponse.json({ error: "Mapping fehlgeschlagen" }, { status: 500 })
   }
 }

@@ -4,8 +4,6 @@ import { useState } from "react"
 import { extractTextFromPdf } from "@/lib/extract/extractTextFromPdf"
 import type { OrderLine } from "@/lib/extract/extractOrderLines"
 import type { MappedLine } from "@/lib/validate/validateArticle"
-import { mapAllLines } from "@/lib/validate/validateArticle"
-import { validateCustomer } from "@/lib/validate/validateCustomer"
 import { buildErpPayload } from "@/lib/tools/buildErpPayload"
 import type { ErpPayload } from "@/lib/tools/buildErpPayload"
 
@@ -31,16 +29,21 @@ export default function HomePage() {
 
       const { positions, metadata } = await response.json()
 
-
       setLines(positions)
       setMetadata(metadata)
-      const mappedLines = await mapAllLines(positions)
+      const mappedLines = await fetch("/api/mapLines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines: positions })
+      }).then(r => r.json()).then(res => res.mapped)
 
-      const customerInfo = await validateCustomer({
-        customerName: metadata.customerName,
-        customerStreet: metadata.customerStreet,
-        customerCity: metadata.customerCity
-      })
+      const customerRes = await fetch("/api/mapCustomer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ metadata })
+      }).then(r => r.json())
+
+      const customerInfo = customerRes.customer
 
       if (!customerInfo) {
         console.error("Kein passender Kunde gefunden")
@@ -49,7 +52,6 @@ export default function HomePage() {
 
       const payload = buildErpPayload(metadata, customerInfo, positions, mappedLines)
 
-      console.log("ERP-Payload:", payload)
       setMapped(mappedLines)
       setErpPayload(payload)
 
