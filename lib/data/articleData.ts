@@ -7,7 +7,7 @@ export interface ArticleData {
 export const articleData: ArticleData[] = [
   { "id": 4756, "name": "Bio Ciabatta Olive glutenfrei 6 x 180 g", "ean": "4022993447569" },
   { "id": 4718, "name": "Bio Ciabatta Olive glutenfrei 1 x 180 g", "ean": "4022993047189" },
-  { "id": 4703, "name": "Bio Focaccia glutenfrei 6 x 220 g", "ean": "4022993447309" },
+  { "id": 4707, "name": "Bio Focaccia glutenfrei 6 x 220 g", "ean": "4022993447309" },
   { "id": 4565, "name": "Bio Focaccia glutenfrei 1 x 220 g", "ean": "4022993047073" },
   { "id": 4566, "name": "Bio Muffin Schoko glutenfrei 6 x 140 g", "ean": "4022993045444" },
   { "id": 4544, "name": "Bio Muffin Schoko glutenfrei 1 x 140 g", "ean": "4022993045444" },

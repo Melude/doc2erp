@@ -1,7 +1,7 @@
 import { parseFullDocument } from "./extractOrderLines"
 import { parseOrderMetadata } from "./extractOrderMetaData"
-import type { OrderLine } from "./extractOrderLines"
-import type { OrderMetadata } from "./extractOrderMetaData"
+import type { OrderLine } from "../types/order"
+import type { OrderMetadata } from "../types/order"
 
 export interface ParsedOrderDocument {
   metadata: OrderMetadata

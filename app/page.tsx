@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import { extractTextFromPdf } from "@/lib/extract/extractTextFromPdf"
-import type { OrderLine } from "@/lib/extract/extractOrderLines"
-import type { MappedLine } from "@/lib/validate/validateArticle"
+import type { OrderLine } from "@/lib/types/order"
+import type { MappedLine } from "@/lib/types/article"
 import { buildErpPayload } from "@/lib/tools/buildErpPayload"
-import type { ErpPayload } from "@/lib/tools/buildErpPayload"
+import type { ErpPayload } from "@/lib/types/erp"
 
 export default function HomePage() {
   const [file, setFile]       = useState<File|null>(null)

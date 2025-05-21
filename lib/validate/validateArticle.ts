@@ -1,14 +1,9 @@
 import OpenAI from "openai"
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions"
-import type { OrderLine } from "@/lib/extract/extractOrderLines"
+import type { OrderLine } from "../types/order"
 import { articleData } from "../data/articleData"
-
-export interface MappedLine {
-  position:        string
-  articleId:       string
-  articleName:     string
-  matchConfidence: number
-}
+import { mapArticleTool } from "../tools/mapArticle"
+import type { MappedLine } from "../types/article"
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -22,63 +17,56 @@ export async function mapAllLines(lines: OrderLine[]): Promise<MappedLine[]> {
   }))
 
   for (const [idx, line] of lines.entries()) {
-     
     const res = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { 
-          role: "system", 
+        {
+          role: "system",
           content: `Du bist ein ERP-Mapping-Experte. Ziel ist es, eine Bestellposition einem Artikel aus dem folgenden ERP-Stammdatenbestand zuzuordnen:
 
                     Artikelstamm:
                     ${articleList.map(a => `- ${a.id}: ${a.name} (EAN: ${a.ean})`).join("\n")}
 
-                    Berücksichtige Beschreibung, Verpackungseinheit, EAN und Artikelname.
-                    Wähle **nur exakt einen passenden Artikel** aus und gib seine ID und eine Confidence (zwischen 0 und 1) zurück.`
+                    Vorgehen:
+                    1. Falls im Feld "articleRaw" eine ERP-Artikelnummer enthalten ist (z.B. "TCI4544" → 4544), hat diese **oberste Priorität**.
+                    2. Danach nutze die Beschreibung zur Plausibilitätsprüfung (z.B. "Chocolate Muffin").
+                    3. Stimmen Nummer und Beschreibung **nicht** überein, **gewinnt die Artikelnummer**, außer der Textinhalt spricht eindeutig dagegen (z.B. "Vanille" vs. "Chocolate").
+                    4. Wenn eine EAN angegeben ist, ist dies ein **sicherer Match**.
+                    5. Wähle nur **einen** Artikel und gib dessen ID und eine Confidence (0–1) zurück.
+
+                    Gib nur ID und Confidence zurück.`
+
         },
-        { 
-          role: "user", 
-          content: `Bestellposition:\n${JSON.stringify(line, null, 2)}` 
-        }
-      ],
-      tools: [
         {
-          type: "function",
-          function: {
-            name: "mapArticle",
-            description: "Gibt die korrekte ERP-Artikelnummer und Confidence zurück.",
-            parameters: {
-              type: "object",
-              properties: {
-                position: { type: "string" },
-                articleId: { type: "string" },
-                matchConfidence: { type: "number" }
-              },
-              required: ["position", "articleId", "matchConfidence"]
-            }
-          }
+          role: "user",
+          content: `Bestellposition:\n${JSON.stringify(line, null, 2)}`
         }
       ],
+      tools: [mapArticleTool],
       tool_choice: { type: "function", function: { name: "mapArticle" } }
     })
 
     const toolCall = res.choices[0].message.tool_calls?.[0] as ChatCompletionMessageToolCall
 
-    if (!toolCall || !toolCall.function?.arguments) {
-      console.warn(`Kein ToolCall für Position ${line.position}`)
+    if (!toolCall?.function?.arguments) {
+      console.warn(`Kein ToolCall oder Argumente für Position ${line.position}`)
       continue
     }
 
     try {
-      const parsed = JSON.parse(toolCall.function.arguments) as MappedLine
-      parsed.position ||= line.position
+      const parsed = JSON.parse(toolCall.function.arguments) as Omit<MappedLine, "position" | "articleName">
+      const articleMatch = articleData.find(a => a.id.toString() === parsed.articleId)
 
-      const matchedArticle = articleData.find(a => a.id.toString() === parsed.articleId)
-      parsed.articleName = matchedArticle?.name ?? "Unbekannter Artikel"
+    mapped.push({
+      position: line.position, 
+      articleId: parsed.articleId,
+      matchConfidence: parsed.matchConfidence,
+      articleName: articleMatch?.name ?? "Unbekannter Artikel"
+    })
 
-      mapped.push(parsed)
     } catch (err) {
       console.error(`Fehler beim Parsen der Mapping-Antwort für Position ${line.position}`, err)
+      console.debug("ToolCall-Rohdaten:", toolCall.function.arguments)
     }
   }
 

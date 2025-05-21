@@ -1,29 +1,10 @@
 import OpenAI from "openai"
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions"
 import { customers } from "@/lib/data/customerData"
-
-interface ExtractedCustomer {
-  customerName: string
-  customerStreet: string
-  customerCity: string
-}
-
-export interface DeliveryAddress {
-  name1: string
-  name2: string
-  street: string
-  city: string
-}
-
-export interface ValidatedCustomer {
-  customerId: number
-  name1: string
-  name2: string
-  street: string
-  city: string
-  deliveryAddress: DeliveryAddress | null
-  matchConfidence: number
-}
+import { mapCustomerTool } from "../tools/mapCustomer"
+import type { ExtractedCustomer } from "../types/customer"
+import type { ValidatedCustomer } from "../types/customer"
+import type { DeliveryAddress } from "../types/customer"
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -58,23 +39,7 @@ export async function validateCustomer(input: ExtractedCustomer): Promise<Valida
                     Ort: ${input.customerCity}` 
     }
     ],
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "mapCustomer",
-          description: "Erkennt den zugehörigen Kunden anhand der extrahierten Adresse.",
-          parameters: {
-            type: "object",
-            properties: {
-              customerId: { type: "number" },
-              matchConfidence: { type: "number" }
-            },
-            required: ["customerId", "matchConfidence"]
-          }
-        }
-      }
-    ],
+    tools: [mapCustomerTool],
     tool_choice: { type: "function", function: { name: "mapCustomer" } }
   })
 

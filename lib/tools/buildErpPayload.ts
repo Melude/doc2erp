@@ -1,30 +1,8 @@
-import type { OrderMetadata } from "@/lib/extract/extractOrderMetaData"
-import type { MappedLine } from "../validate/validateArticle"
-import type { OrderLine } from "@/lib/extract/extractOrderLines"
-import type { ValidatedCustomer } from "@/lib/validate/validateCustomer"
-
-interface ErpPosition {
-  position: string
-  articleNumber: string
-  description: string
-  quantity: number
-  unitPrice: number
-}
-
-interface ErpAddress {
-  name: string
-  street: string
-  city: string
-}
-
-export interface ErpPayload {
-  customerNumber: number
-  externalOrderNumber: string
-  orderDate: string
-  deliveryDate: string
-  deliveryAddress: ErpAddress
-  positions: ErpPosition[]
-}
+import type { OrderMetadata } from "../types/order"
+import type { MappedLine } from "../types/article"
+import type { OrderLine } from "../types/order"
+import type { ValidatedCustomer } from "../types/customer"
+import type { ErpPayload } from "../types/erp"
 
 export function buildErpPayload(
   metadata: OrderMetadata,
@@ -33,10 +11,10 @@ export function buildErpPayload(
   mapped: MappedLine[]
 ): ErpPayload {
   const delivery = validatedCustomer.deliveryAddress ?? {
-    name1: metadata.deliveryName || validatedCustomer.name1,
-    name2: metadata.deliveryName2 || validatedCustomer.name2,
-    street: metadata.deliveryStreet || validatedCustomer.street,
-    city: metadata.deliveryCity || validatedCustomer.city
+    name1: validatedCustomer.name1,
+    name2: validatedCustomer.name2,
+    street: validatedCustomer.street,
+    city: validatedCustomer.city
   }
 
   return {
